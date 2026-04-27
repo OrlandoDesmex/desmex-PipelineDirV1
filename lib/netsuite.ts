@@ -1,12 +1,12 @@
 import crypto from "crypto";
 
-const ACCOUNT_ID = process.env.NS_ACCOUNT_ID!;
-const CONSUMER_KEY = process.env.NS_CONSUMER_KEY!;
-const CONSUMER_SECRET = process.env.NS_CONSUMER_SECRET!;
-const TOKEN_ID = process.env.NS_TOKEN_ID!;
-const TOKEN_SECRET = process.env.NS_TOKEN_SECRET!;
+const ACCOUNT_ID      = (process.env.NS_ACCOUNT_ID      ?? "").trim();
+const CONSUMER_KEY    = (process.env.NS_CONSUMER_KEY    ?? "").trim();
+const CONSUMER_SECRET = (process.env.NS_CONSUMER_SECRET ?? "").trim();
+const TOKEN_ID        = (process.env.NS_TOKEN_ID        ?? "").trim();
+const TOKEN_SECRET    = (process.env.NS_TOKEN_SECRET    ?? "").trim();
 
-export const SUITEQL_URL = `https://${process.env.NS_ACCOUNT_ID}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql`;
+export const SUITEQL_URL = `https://${ACCOUNT_ID}.suitetalk.api.netsuite.com/services/rest/query/v1/suiteql`;
 
 function percentEncode(str: string): string {
   return encodeURIComponent(str).replace(/[!'()*]/g, (c) =>
