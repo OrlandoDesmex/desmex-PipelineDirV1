@@ -31,25 +31,6 @@ export default function PipelinePage() {
 
   return (
     <main className="min-h-screen">
-      {/* Nav bar */}
-      <nav className="bg-desmex-red-dark shadow-sm sticky top-0 z-10">
-        <div className="max-w-screen-2xl mx-auto px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-white font-bold text-lg tracking-wide">
-              DESMEX
-            </span>
-            <span className="text-white/40 text-lg">|</span>
-            <span className="text-white/80 text-sm font-medium">
-              Ventas · Tecnología Ambiental
-            </span>
-          </div>
-          <span className="text-white/60 text-xs hidden md:block">
-            Pipeline comercial
-          </span>
-        </div>
-      </nav>
-
-      {/* Content — sin max-width para que el board use todo el viewport */}
       <PipelineClient data={data} />
     </main>
   );

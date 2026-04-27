@@ -9,6 +9,20 @@ interface PipelineClientProps {
   data: PipelineData;
 }
 
+function norm(s: string) {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function stagePct(etapa: string): 30 | 50 | 90 | null {
+  const n = norm(etapa);
+  if (n.includes("levantamiento") || n.includes("visita") || n.includes("diagnostico") ||
+      n.includes("diseno") || n.includes("solucion") || n.includes("ingenieria")) return 30;
+  if (n.includes("estimacion") || n.includes("cotizacion") ||
+      n.includes("propuesta") || n.includes("aclaracion") || n.includes("ajuste")) return 50;
+  if (n.includes("negociacion") || n.includes("aprobacion") || n.includes("cierre")) return 90;
+  return null;
+}
+
 function fmtLastRead(iso: string) {
   return new Date(iso).toLocaleDateString("es-MX", {
     day: "2-digit",
@@ -26,6 +40,7 @@ export default function PipelineClient({ data }: PipelineClientProps) {
   );
 
   const [vendedor, setVendedor] = useState<string>("Todos");
+  const [selectedPct, setSelectedPct] = useState<30 | 50 | 90 | null>(null);
   const [hideEmpty, setHideEmpty] = useState(false);
   const [selectedStages, setSelectedStages] = useState<Set<string>>(
     () => new Set(allStageNames)
@@ -94,8 +109,9 @@ export default function PipelineClient({ data }: PipelineClientProps) {
         count: stage.opportunities.length,
         totalValor: stage.opportunities.reduce((s, o) => s + (o.valor ?? 0), 0),
       }))
-      .filter((stage) => !hideEmpty || stage.count > 0);
-  }, [data.stages, vendedor, hideEmpty, selectedStages]);
+      .filter((stage) => !hideEmpty || stage.count > 0)
+      .filter((stage) => selectedPct === null || stagePct(stage.etapa) === selectedPct);
+  }, [data.stages, vendedor, hideEmpty, selectedStages, selectedPct]);
 
   const kpis = useMemo(() => {
     const allOpps = filteredStages.flatMap((s) => s.opportunities);
@@ -110,6 +126,16 @@ export default function PipelineClient({ data }: PipelineClientProps) {
           : 0,
       etapasActivas: filteredStages.filter((s) => s.count > 0).length,
     };
+  }, [filteredStages]);
+
+  const [boardScrollWidth, setBoardScrollWidth] = useState(0);
+  useEffect(() => {
+    const el = boardScrollRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setBoardScrollWidth(el.scrollWidth));
+    ro.observe(el);
+    setBoardScrollWidth(el.scrollWidth);
+    return () => ro.disconnect();
   }, [filteredStages]);
 
   const etapasSeleccionadas = selectedStages.size;
@@ -158,6 +184,26 @@ export default function PipelineClient({ data }: PipelineClientProps) {
                 }`}
               >
                 {v}
+              </button>
+            ))}
+          </div>
+
+          {/* Separador */}
+          <div className="w-px h-6 bg-desmex-border hidden md:block" />
+
+          {/* Filtro por % de avance */}
+          <div className="flex gap-2">
+            {([30, 50, 90] as const).map((pct) => (
+              <button
+                key={pct}
+                onClick={() => setSelectedPct(selectedPct === pct ? null : pct)}
+                className={`text-xs px-3 py-1.5 rounded-full border transition-colors cursor-pointer font-semibold ${
+                  selectedPct === pct
+                    ? "bg-desmex-red text-white border-desmex-red"
+                    : "bg-white text-stone-600 border-desmex-border hover:border-desmex-red hover:text-desmex-red"
+                }`}
+              >
+                {pct}%
               </button>
             ))}
           </div>
@@ -269,10 +315,7 @@ export default function PipelineClient({ data }: PipelineClientProps) {
             className="overflow-x-auto px-6"
             onScroll={onTopScroll}
           >
-            <div
-              className="h-[1px]"
-              style={{ width: filteredStages.length * 236 - 12 }}
-            />
+            <div className="h-[1px]" style={{ width: boardScrollWidth }} />
           </div>
 
           {/* Board real */}
