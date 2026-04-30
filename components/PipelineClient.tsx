@@ -13,6 +13,11 @@ function norm(s: string) {
   return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 }
 
+function isWon(etapa: string): boolean {
+  const n = norm(etapa);
+  return n.includes("kickoff") || n.includes("inicio");
+}
+
 function stagePct(etapa: string): 30 | 50 | 90 | null {
   const n = norm(etapa);
   if (n.includes("levantamiento") || n.includes("visita") || n.includes("diagnostico") ||
@@ -116,17 +121,32 @@ export default function PipelineClient({ data }: PipelineClientProps) {
   const kpis = useMemo(() => {
     const allOpps = filteredStages.flatMap((s) => s.opportunities);
     const withProb = allOpps.filter((o) => o.probabilidad !== null);
+
+    // Conversion: won opps / total opps filtered by vendor only (ignore stage/pct filters)
+    const oppsByVendor = data.stages.flatMap((s) =>
+      vendedor === "Todos" ? s.opportunities : s.opportunities.filter((o) => o.vendedor === vendedor)
+    );
+    const wonOpps = data.stages
+      .filter((s) => isWon(s.etapa))
+      .flatMap((s) =>
+        vendedor === "Todos" ? s.opportunities : s.opportunities.filter((o) => o.vendedor === vendedor)
+      );
+    const totalOppsAll = oppsByVendor.length;
+    const wonCount = wonOpps.length;
+
     return {
       totalValor: allOpps.reduce((s, o) => s + (o.valor ?? 0), 0),
       totalOpps: allOpps.length,
       avgProbabilidad:
         withProb.length > 0
-          ? withProb.reduce((s, o) => s + (o.probabilidad ?? 0), 0) /
-            withProb.length
+          ? withProb.reduce((s, o) => s + (o.probabilidad ?? 0), 0) / withProb.length
           : 0,
       etapasActivas: filteredStages.filter((s) => s.count > 0).length,
+      conversionRate: totalOppsAll > 0 ? Math.round((wonCount / totalOppsAll) * 100) : 0,
+      wonOpps: wonCount,
+      totalOppsAll,
     };
-  }, [filteredStages]);
+  }, [filteredStages, data.stages, vendedor]);
 
   const [boardScrollWidth, setBoardScrollWidth] = useState(0);
   useEffect(() => {
@@ -299,6 +319,9 @@ export default function PipelineClient({ data }: PipelineClientProps) {
           totalOpps={kpis.totalOpps}
           avgProbabilidad={kpis.avgProbabilidad}
           etapasActivas={kpis.etapasActivas}
+          conversionRate={kpis.conversionRate}
+          wonOpps={kpis.wonOpps}
+          totalOppsAll={kpis.totalOppsAll}
         />
       </div>
 

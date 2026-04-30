@@ -5,6 +5,9 @@ interface KPICardsProps {
   totalOpps: number;
   avgProbabilidad: number;
   etapasActivas: number;
+  conversionRate: number;
+  wonOpps: number;
+  totalOppsAll: number;
 }
 
 function fmt(n: number) {
@@ -20,9 +23,12 @@ export default function KPICards({
   totalOpps,
   avgProbabilidad,
   etapasActivas,
+  conversionRate,
+  wonOpps,
+  totalOppsAll,
 }: KPICardsProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
       <div className="bg-white rounded-xl border border-desmex-border shadow-sm p-4">
         <p className="text-xs text-stone-400 uppercase tracking-wide mb-1">
           Valor total pipeline
@@ -55,6 +61,14 @@ export default function KPICards({
         </p>
         <p className="text-2xl font-bold text-stone-800">{etapasActivas}</p>
         <p className="text-xs text-stone-400 mt-1">en el pipeline</p>
+      </div>
+
+      <div className="bg-white rounded-xl border-l-4 border-emerald-500 shadow-sm p-4">
+        <p className="text-xs text-stone-400 uppercase tracking-wide mb-1">
+          Tasa de conversión
+        </p>
+        <p className="text-2xl font-bold text-emerald-600">{conversionRate}%</p>
+        <p className="text-xs text-stone-400 mt-1">{wonOpps} ganadas de {totalOppsAll} totales</p>
       </div>
     </div>
   );
