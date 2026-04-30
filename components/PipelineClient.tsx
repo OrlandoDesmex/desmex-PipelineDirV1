@@ -142,7 +142,7 @@ export default function PipelineClient({ data }: PipelineClientProps) {
           ? withProb.reduce((s, o) => s + (o.probabilidad ?? 0), 0) / withProb.length
           : 0,
       etapasActivas: filteredStages.filter((s) => s.count > 0).length,
-      conversionRate: totalOppsAll > 0 ? Math.round((wonCount / totalOppsAll) * 100) : 0,
+      conversionRate: totalOppsAll > 0 ? Math.round((wonCount / totalOppsAll) * 1000) / 10 : 0,
       wonOpps: wonCount,
       totalOppsAll,
     };

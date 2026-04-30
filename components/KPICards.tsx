@@ -67,7 +67,7 @@ export default function KPICards({
         <p className="text-xs text-stone-400 uppercase tracking-wide mb-1">
           Tasa de conversión
         </p>
-        <p className="text-2xl font-bold text-emerald-600">{conversionRate}%</p>
+        <p className="text-2xl font-bold text-emerald-600">{conversionRate.toFixed(1)}%</p>
         <p className="text-xs text-stone-400 mt-1">{wonOpps} ganadas de {totalOppsAll} totales</p>
       </div>
     </div>
