@@ -7,6 +7,8 @@ interface CalendarioMensualProps {
   month: number;
   events: CalendarEvent[];
   onEventClick: (event: CalendarEvent) => void;
+  selectedDay?: string;
+  onDayClick?: (key: string) => void;
 }
 
 const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
@@ -42,7 +44,7 @@ function buildGrid(year: number, month: number): (Date | null)[] {
   return cells;
 }
 
-export default function CalendarioMensual({ year, month, events, onEventClick }: CalendarioMensualProps) {
+export default function CalendarioMensual({ year, month, events, onEventClick, selectedDay, onDayClick }: CalendarioMensualProps) {
   const cells = buildGrid(year, month);
   const todayKey = dateKey(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate());
 
@@ -64,20 +66,24 @@ export default function CalendarioMensual({ year, month, events, onEventClick }:
             return <div key={`blank-${i}`} className="min-h-[110px] bg-stone-50/50" />;
           }
 
-          const key = dateKey(date.getFullYear(), date.getMonth() + 1, date.getDate());
-          const dayEvents = events.filter(ev => ev.startDate?.startsWith(key));
-          const isToday   = key === todayKey;
-          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          const key        = dateKey(date.getFullYear(), date.getMonth() + 1, date.getDate());
+          const dayEvents  = events.filter(ev => ev.startDate?.startsWith(key));
+          const isToday    = key === todayKey;
+          const isSelected = key === selectedDay;
+          const isWeekend  = date.getDay() === 0 || date.getDay() === 6;
 
           return (
             <div
               key={key}
-              className={`min-h-[110px] p-1.5 flex flex-col ${isWeekend ? "bg-stone-50/70" : "bg-white"}`}
+              onClick={() => onDayClick?.(key)}
+              className={`min-h-[110px] p-1.5 flex flex-col transition-colors ${
+                isSelected ? "bg-blue-50" : isWeekend ? "bg-stone-50/70" : "bg-white"
+              } ${onDayClick ? "cursor-pointer hover:bg-blue-50/60" : ""}`}
             >
               {/* Day number */}
               <div className="flex justify-end mb-1">
                 <span className={`text-xs font-bold w-6 h-6 flex items-center justify-center rounded-full transition-colors ${
-                  isToday ? "bg-desmex-red text-white" : "text-stone-400"
+                  isToday ? "bg-desmex-red text-white" : isSelected ? "bg-blue-500 text-white" : "text-stone-400"
                 }`}>
                   {date.getDate()}
                 </span>

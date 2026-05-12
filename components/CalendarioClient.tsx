@@ -38,8 +38,14 @@ function fmtTime(t: string | null) {
   return t.slice(0, 5);
 }
 
+function dateKey(y: number, m: number, d: number) {
+  return `${y}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+}
+
 export default function CalendarioClient() {
   const now = new Date();
+  const todayKey = dateKey(now.getFullYear(), now.getMonth() + 1, now.getDate());
+
   const [year,         setYear]         = useState(now.getFullYear());
   const [month,        setMonth]        = useState(now.getMonth() + 1);
   const [vendedor,     setVendedor]     = useState("Todos");
@@ -50,6 +56,21 @@ export default function CalendarioClient() {
   const [loading,      setLoading]      = useState(true);
   const [errors,       setErrors]       = useState<string[]>([]);
   const [selected,     setSelected]     = useState<CalendarEvent | null>(null);
+  const [selectedDay,  setSelectedDay]  = useState(todayKey);
+
+  function selectDay(key: string) {
+    setSelectedDay(key);
+    // Navigate calendar month if needed
+    const [y, m] = key.split("-").map(Number);
+    if (y !== year || m !== month) { setYear(y); setMonth(m); }
+  }
+
+  function shiftDay(delta: number) {
+    const [y, m, d] = selectedDay.split("-").map(Number);
+    const next = new Date(y, m - 1, d + delta);
+    const key = dateKey(next.getFullYear(), next.getMonth() + 1, next.getDate());
+    selectDay(key);
+  }
 
   useEffect(() => {
     setLoading(true);
@@ -210,50 +231,70 @@ export default function CalendarioClient() {
           <p className="text-stone-400 text-sm animate-pulse">Cargando actividades desde NetSuite…</p>
         </div>
       ) : (
-        <CalendarioMensual year={year} month={month} events={filtered} onEventClick={setSelected} />
+        <CalendarioMensual year={year} month={month} events={filtered} onEventClick={setSelected} selectedDay={selectedDay} onDayClick={selectDay} />
       )}
 
-      {/* Today's activities panel */}
+      {/* Day activities panel */}
       {!loading && (() => {
-        const todayKey = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`;
-        const todayEvents = filtered.filter(ev => ev.startDate === todayKey);
-        if (todayEvents.length === 0) return null;
+        const dayEvents = filtered.filter(ev => ev.startDate === selectedDay);
+        const isToday   = selectedDay === todayKey;
         return (
           <div className="mt-6 bg-white rounded-xl border border-desmex-border shadow-sm overflow-hidden">
             <div className="px-4 py-3 border-b border-desmex-border bg-stone-50 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-stone-700" suppressHydrationWarning>
-                Actividades de hoy — {fmtDate(todayKey)}
-              </h2>
-              <span className="text-xs text-stone-400">{todayEvents.length} actividad{todayEvents.length !== 1 ? "es" : ""}</span>
-            </div>
-            <div className="divide-y divide-desmex-border">
-              {todayEvents.map((ev) => (
-                <button
-                  key={ev.id}
-                  onClick={() => setSelected(ev)}
-                  className="w-full text-left px-4 py-3 hover:bg-stone-50 transition-colors cursor-pointer"
-                >
-                  <div className="flex items-center gap-2 mb-1.5">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${TYPE_CHIP[ev.type]}`}>
-                      {TYPE_LABEL[ev.type]}
-                    </span>
-                    <span className="text-xs text-stone-500 tabular-nums">
-                      {ev.startTime ?? "—"}{ev.endTime ? ` – ${ev.endTime}` : ""}
-                    </span>
-                    <span className="text-xs text-stone-400 ml-auto shrink-0">{ev.ownerName}</span>
-                  </div>
-                  <p className="text-sm font-medium text-stone-800 leading-snug">{ev.title}</p>
-                  {(ev.companyName || ev.contactName) && (
-                    <p className="text-xs text-stone-500 mt-0.5">
-                      {ev.companyName}{ev.companyName && ev.contactName ? " · " : ""}{ev.contactName}
-                    </p>
-                  )}
-                  {ev.message && (
-                    <p className="text-xs text-stone-400 mt-1 leading-relaxed line-clamp-2">{ev.message}</p>
-                  )}
+              <div className="flex items-center gap-2">
+                <button onClick={() => shiftDay(-1)} className="p-1 rounded hover:bg-stone-200 transition-colors cursor-pointer text-stone-500">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                  </svg>
                 </button>
-              ))}
+                <h2 className="text-sm font-semibold text-stone-700 capitalize" suppressHydrationWarning>
+                  {fmtDate(selectedDay)}{isToday && <span className="ml-2 text-xs font-normal text-desmex-red">hoy</span>}
+                </h2>
+                <button onClick={() => shiftDay(1)} className="p-1 rounded hover:bg-stone-200 transition-colors cursor-pointer text-stone-500">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+                {!isToday && (
+                  <button onClick={() => selectDay(todayKey)} className="text-xs text-desmex-red hover:underline cursor-pointer ml-1">
+                    Hoy
+                  </button>
+                )}
+              </div>
+              <span className="text-xs text-stone-400">{dayEvents.length} actividad{dayEvents.length !== 1 ? "es" : ""}</span>
             </div>
+            {dayEvents.length === 0 ? (
+              <div className="px-4 py-8 text-center text-xs text-stone-400">Sin actividades para este día.</div>
+            ) : (
+              <div className="divide-y divide-desmex-border">
+                {dayEvents.map((ev) => (
+                  <button
+                    key={ev.id}
+                    onClick={() => setSelected(ev)}
+                    className="w-full text-left px-4 py-3 hover:bg-stone-50 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${TYPE_CHIP[ev.type]}`}>
+                        {TYPE_LABEL[ev.type]}
+                      </span>
+                      <span className="text-xs text-stone-500 tabular-nums">
+                        {ev.startTime ?? "—"}{ev.endTime ? ` – ${ev.endTime}` : ""}
+                      </span>
+                      <span className="text-xs text-stone-400 ml-auto shrink-0">{ev.ownerName}</span>
+                    </div>
+                    <p className="text-sm font-medium text-stone-800 leading-snug">{ev.title}</p>
+                    {(ev.companyName || ev.contactName) && (
+                      <p className="text-xs text-stone-500 mt-0.5">
+                        {ev.companyName}{ev.companyName && ev.contactName ? " · " : ""}{ev.contactName}
+                      </p>
+                    )}
+                    {ev.message && (
+                      <p className="text-xs text-stone-400 mt-1 leading-relaxed line-clamp-2">{ev.message}</p>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         );
       })()}
